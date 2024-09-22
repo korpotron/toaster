@@ -36,7 +36,7 @@ public extension View {
                     .padding()
                     .background(.pink)
                     .transition(.toast)
-                    .after(.seconds(3)) {
+                    .after(.seconds(3)) { @MainActor in
                         show = false
                     }
             }
