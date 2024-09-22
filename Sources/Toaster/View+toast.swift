@@ -36,6 +36,9 @@ public extension View {
                     .padding()
                     .background(.pink)
                     .transition(.toast)
+                    .after(.seconds(3)) {
+                        show = false
+                    }
             }
         }
     }
