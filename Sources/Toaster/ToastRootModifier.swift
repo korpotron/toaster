@@ -1,7 +1,7 @@
 import SwiftUI
 import Combine
 
-public struct ToastViewModifier<Value, Toast: View>: ViewModifier {
+public struct ToastRootModifier<Value, Toast: View>: ViewModifier {
     @Binding private var presenting: Value?
     private let toast: (_ value: Value) -> Toast
 
@@ -17,23 +17,12 @@ public struct ToastViewModifier<Value, Toast: View>: ViewModifier {
         if let root {
             content
                 .onChange(of: presenting != nil, initial: true) { _, new in
-                    root.wrappedValue = AnyViewModifier(block: modify)
+                    root.wrappedValue = AnyViewModifier(ToastWrapperModifier(presenting: $presenting, toast: toast))
                 }
         } else {
-            modify(content)
+            content
+                .modifier(ToastWrapperModifier(presenting: $presenting, toast: toast))
         }
-    }
-
-    private func modify<T: View>(_ content: T) -> some View {
-        content
-            .overlay {
-                Group {
-                    if let presenting {
-                        toast(presenting)
-                    }
-                }
-                .animation(.easeInOut, value: presenting != nil)
-            }
     }
 }
 
@@ -56,7 +45,7 @@ public struct ToastViewModifier<Value, Toast: View>: ViewModifier {
                             Color.yellow
                                 .ignoresSafeArea()
                         }
-                        .modifier(ToastViewModifier(presenting: .of($show)) { _ in
+                        .modifier(ToastRootModifier(presenting: .of($show)) { _ in
                             Text("Hello ")
                                 .padding()
                                 .background(.regularMaterial)

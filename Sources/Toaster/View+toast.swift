@@ -3,7 +3,7 @@ import SwiftUI
 public extension View {
     @inlinable
     func toast<Value>(presenting: Binding<Value?>, @ViewBuilder content: @escaping (Value) -> some View) -> some View {
-        modifier(ToastViewModifier(presenting: presenting, toast: content))
+        modifier(ToastRootModifier(presenting: presenting, toast: content))
     }
 }
 
@@ -11,16 +11,6 @@ public extension View {
     func toast(presenting: Binding<Bool>, @ViewBuilder content: @escaping () -> some View) -> some View {
         toast(presenting: .of(presenting)) { _ in
             content()
-        }
-    }
-}
-
-extension Binding<Void?> {
-    static func of(_ binding: Binding<Bool>) -> Self {
-        .init {
-            binding.wrappedValue ? () : nil
-        } set: { value in
-            binding.wrappedValue = value != nil
         }
     }
 }
@@ -45,6 +35,7 @@ extension Binding<Void?> {
                 Text("Hello")
                     .padding()
                     .background(.pink)
+                    .transition(.toast)
             }
         }
     }
