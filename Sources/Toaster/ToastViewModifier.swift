@@ -1,32 +1,39 @@
 import SwiftUI
+import Combine
 
 public struct ToastViewModifier<Value, Toast: View>: ViewModifier {
-    private let presenting: Binding<Value?>
+    @Binding private var presenting: Value?
     private let toast: (_ value: Value) -> Toast
 
     public init(presenting: Binding<Value?>, @ViewBuilder toast: @escaping (_ value: Value) -> Toast) {
-        self.presenting = presenting
+        _presenting = presenting
         self.toast = toast
     }
 
+    @Environment(\.root)
+    private var root
+
     public func body(content: Content) -> some View {
+        if let root {
+            content
+                .onChange(of: presenting != nil, initial: true) { _, new in
+                    root.wrappedValue = AnyViewModifier(block: modify)
+                }
+        } else {
+            modify(content)
+        }
+    }
+
+    private func modify<T: View>(_ content: T) -> some View {
         content
             .overlay {
-                overlay
+                Group {
+                    if let presenting {
+                        toast(presenting)
+                    }
+                }
+                .animation(.easeInOut, value: presenting != nil)
             }
-    }
-
-    var value: Value? {
-        presenting.wrappedValue
-    }
-
-    var overlay: some View {
-        Group {
-            if let value {
-                toast(value)
-            }
-        }
-        .animation(.easeInOut, value: value != nil)
     }
 }
 
@@ -35,32 +42,32 @@ public struct ToastViewModifier<Value, Toast: View>: ViewModifier {
         @State var show = false
 
         var body: some View {
-            TabView {
-                Tab {
-                    VStack {
-                        Button("Toggle") {
-                            show.toggle()
+            ToastRootView {
+                TabView {
+                    Tab {
+                        VStack {
+                            Button("Toggle") {
+                                show.toggle()
+                            }
+                            .offset(y: 100)
                         }
-                        .offset(y: 100)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
+                        .background {
+                            Color.yellow
+                                .ignoresSafeArea()
+                        }
+                        .modifier(ToastViewModifier(presenting: .of($show)) { _ in
+                            Text("Hello ")
+                                .padding()
+                                .background(.regularMaterial)
+                                .transition(.toast)
+                        })
+                    } label: {
+                        Label("Toast", systemImage: "wineglass")
                     }
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background {
-                        Color.yellow
-                            .ignoresSafeArea()
+                    Tab {} label: {
+                        Label("Toast", systemImage: "wineglass")
                     }
-                    .modifier(ToastViewModifier(presenting: .of($show)) { _ in
-                        Text("Hello ")
-                            .padding()
-                            .background(.regularMaterial)
-                            .transition(.toast)
-                    })
-                } label: {
-                    Label("Toast", systemImage: "wineglass")
-                }
-                Tab {
-
-                } label: {
-                    Label("Toast", systemImage: "wineglass")
                 }
             }
         }
